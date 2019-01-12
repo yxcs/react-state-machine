@@ -1,27 +1,40 @@
 import React, { Component } from 'react';
-import logo from './logo.svg';
+import { BrowserRouter, Switch, Route, Redirect } from 'react-router-dom';
+
+import Article from './components/Article';
+import Author from './components/Author';
+import Content from './components/Content';
+import Footer from './components/Footer';
+import Header from './components/Header';
+import List from './components/List';
+import Login from './components/Login';
+
 import './App.css';
 
 class App extends Component {
+  constructor(props) {
+    super(props);
+  }
+
   render() {
     return (
-      <div className="App">
-        <header className="App-header">
-          <img src={logo} className="App-logo" alt="logo" />
-          <p>
-            Edit <code>src/App.js</code> and save to reload.
-          </p>
-          <a
-            className="App-link"
-            href="https://reactjs.org"
-            target="_blank"
-            rel="noopener noreferrer"
-          >
-            Learn React
-          </a>
-        </header>
-      </div>
-    );
+      <BrowserRouter>
+        <div>
+          <Header></Header> {/* 头部导航内容 */}
+          <Content>         {/* Content来规范主题内容的整体样式，包含路由内容 */}
+            <Switch>        {/* 用来渲染匹配地址的第一个<Route>或者<Redirect> */}
+              <Redirect exact from="/" to="/home/all" />              {/* <Redirect> 跳转到home */}
+              <Redirect exact from="/home" to="/home/all" />
+              <Route path='/home/:tab' component={List}></Route>       {/* 匹配路由为 /home 的请求，显示List组件 */}
+              <Route path='/article/:id' component={Article}></Route>
+              <Route path='/author/:id' component={Author}></Route>
+              <Route path='/login' component={Login}></Route>
+            </Switch>
+          </Content>
+          <Footer></Footer> {/* 页脚 © copyright等信息 */}
+        </div>
+      </BrowserRouter>
+    )
   }
 }
 
