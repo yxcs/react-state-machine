@@ -1,0 +1,71 @@
+// 列表项样式
+.list__item-wrap {
+  display: flex;
+  justify-content: flex-start;
+  align-items: center;
+  width: 100%;
+  height: 50px;
+  padding: 10px;
+  border-bottom: 1px solid #f0f0f0;
+  .list__item-avatar {   // 40px
+    width: 30px;
+    height: 30px;
+    margin-right: 10px;
+    img {
+      width: 30px;
+      height: 30px;
+    }
+  }
+  .list__item--replay {
+    width: 100px;
+    height: 30px;
+    line-height: 30px;
+    text-align: center;
+    font-size: 10px;
+    color: #b4b4b4;
+    span.reply {
+      color: #9e78c0;
+    }
+    span {
+      display: inline-block;
+      transform: scale(0.8);
+    }
+  }
+  .list__item--title {
+    span {
+      display: inline-block;
+      padding: 2px 4px;
+      font-size: 12px;
+      border-radius: 3px;
+      background-color: #e5e5e5;
+      color: #999;
+      margin-right: 6px;
+      &.green {
+        background-color: #80bd01;
+        color: #fff;
+      }
+    }
+    a {
+      width: 890px;
+      white-space: nowrap;
+      display: inline-block;
+      vertical-align: middle;
+      color: #333;
+      font-size: 16px;
+      line-height: 30px;
+      text-overflow: ellipsis;
+      &:hover {
+        text-decoration: underline;
+      }
+    }
+  }
+  .list__item--time {
+    width: 100px;
+    text-align: right;
+    color: #778087;
+    font-size: 11px;
+  }
+}
+.list__wrap-page {
+  padding: 20px 0px 10px 20px;
+}

@@ -3,6 +3,7 @@ body,html {
   margin: 0;
   background-color: #e1e1e1;
   font-family: "Helvetica Neue","Luxi Sans","DejaVu Sans",Tahoma,"Hiragino Sans GB",STHeiti,sans-serif!important;
+  -webkit-text-size-adjust: none;
 }
 a {
   text-decoration: none;
@@ -28,6 +29,9 @@ a {
   text-align: center;
   line-height: 60px;
 }
+.header__menu>div.active {
+  background: rgba(255, 255, 255, 0.2);
+}
 .header__menu>div a {
   display: inline-block;
   width: 100%;
@@ -39,7 +43,7 @@ a {
   width: 1200px;
   min-height: 400px;
   margin: 20px auto;
-  padding: 10px;
+  padding: 10px 0;
   background: #fff;
   border-radius: 5px;
 }

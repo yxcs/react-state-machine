@@ -10,6 +10,7 @@ import List from './components/List';
 import Login from './components/Login';
 
 import './App.css';
+import './components/main.less';
 
 class App extends Component {
   constructor(props) {

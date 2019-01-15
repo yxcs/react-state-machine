@@ -30,9 +30,7 @@ const params2String = (params) => {
 export const getTopics = (params) => {
   const newParams = filterNullParams(params);
   const str = params2String(newParams);
-  return axios.get(`${BASE_URL}/topics`, {
-    ...newParams
-  })
+  return axios.get(`${BASE_URL}/topics?${str}`)
 }
 
 // get /topic/:id 主题详情

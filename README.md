@@ -303,3 +303,284 @@ npm start
         "eject": "react-scripts eject"
     }
     ```
+    antd的环境已经搭建好了，在List中尝试使用一下：
+    ```javascript
+    import React, { Component } from 'react';
+    import { getTopics } from '../services/apis';
+    import { Avatar } from 'antd';                 // 引入 Avatar 组件
+    class List extends Component {
+        constructor(props) {
+            super(props);
+        }
+
+        componentWillMount() {
+            const params = {
+            page: 1,
+            tab: 'all',
+            limit: 40,
+            mdrender: true
+            }
+            getTopics(params).then(res => {
+            console.log(res)
+            })
+        }
+
+        render() {
+            return (
+            <div className="list__wrap">
+                <Avatar src="https://zos.alipayobjects.com/rmsportal/ODTLcjxAfvqbxHnVXCYX.png" /> {/* 调用 Avatar， 这是会在页面看到一个头像 */}
+            </div>
+            )
+        }
+    }
+
+    export default List;
+    ```
+    在List中添加样式和dom、组件等，配合之前获取到的数据来渲染列表，最后的效果如下：
+
+    ![添加数据展示](/public/images/show-data-page.png)
+
+5. 这时我们会发现一个问题，<Header> 和 <List> 并不是父子组件，那么他们之间的数据传递通过props的话，会很复杂，那么有没有比较简单切通用的方法那？当然有的，例如Flux。
+   简单说，Flux 是一种架构思想，专门解决软件的结构问题。它跟MVC 架构是同一类东西，但是更加简单和清晰。  
+   Flux存在多种实现[（至少15种）](https://github.com/voronianski/flux-comparison)，我使用的是[Facebook官方实现](https://github.com/facebook/flux)。  
+   首先，Flux将一个应用分成四个部分。
+   - View： 视图层
+   - Action（动作）：视图层发出的消息（比如mouseClick）
+   - Dispatcher（派发器）：用来接收Actions、执行回调函数
+   - Store（数据层）：用来存放应用的状态，一旦发生变动，就提醒Views要更新页面
+   
+   ![添加数据展示](/public/images/flux-four-status.png)
+
+   Flux 的最大特点，就是数据的"单向流动"。 
+   * 用户访问 View
+   * View 发出用户的 Action
+   * Dispatcher 收到 Action，要求 Store 进行相应的更新
+   * Store 更新后，发出一个"change"事件
+   * View 收到"change"事件后，更新页面  
+   上面过程中，数据总是"单向流动"，任何相邻的部分都不会发生数据的"双向流动"。这保证了流程的清晰。
+   首先安装需要用到的插件，然后在src文件夹下新建fluxStore文件夹，在fluxStore下新建文件actions.js、store.js、dispatcher.js用于存放flux相关内容，
+   ```shell
+    npm i events object-assign flux --save
+   ```
+   actions.js
+   ```javascript
+    import AppDispatcher from './dispatcher';
+
+    const onTabChange = (text) => {
+        AppDispatcher.dispatch({
+            actionType: 'TAB_CHANGE',
+            text: text
+        });
+    }
+    export default onTabChange;
+   ```
+   store.js
+   ```javascript
+    const EventEmitter = require('events').EventEmitter;
+    const assign = require('object-assign');
+
+    const TabStore = assign({}, EventEmitter.prototype, {
+        tab: 'all',
+
+        getTab: function () {
+            return this.tab;
+        },
+        tabChange: function (text) {
+            this.tab = text;
+        },
+
+        emitChange: function () {
+            this.emit('change');
+        },
+
+        addChangeListener: function(callback) {
+            this.on('change', callback);
+        },
+
+        removeChangeListener: function (callback) {
+            this.removeListener('change', callback);
+        }
+    });
+
+    export default TabStore;
+   ```
+   dispatcher.js
+   ```javascript
+    import Flux from 'flux';
+    import TabStore from './store';
+    const Dispatcher = Flux.Dispatcher;
+    const AppDispatcher = new Dispatcher();
+
+    AppDispatcher.register(function (action) {
+        switch(action.actionType) {
+            case 'TAB_CHANGE':
+            TabStore.tabChange(action.text);
+            TabStore.emitChange();
+            break;
+            default:
+            // no op
+        }
+    })
+
+    export default AppDispatcher;
+   ```
+   当Flux构建好了之后，我们将之引入到需要使用的地方，
+   Header.js
+   ```javascript
+    import React, { Component } from 'react';
+    import { Link } from 'react-router-dom';
+
+    import TabStore from '../fluxStore/store';
+    import onTabChange from '../fluxStore/actions';
+
+    class Header extends Component {
+        constructor(props) {
+            super(props);
+            this.state = {
+            tab: 'all'
+            }
+        }
+
+        componentDidMount() {
+            TabStore.addChangeListener(this._onChange.bind(this));
+        }
+
+        componentWillUnmount() {
+            TabStore.removeChangeListener(this._onChange);
+        }
+
+        tapTab(text) {
+            onTabChange(text);
+        }
+
+        _onChange() {
+            this.setState({
+            tab: TabStore.getTab()
+            })
+        }
+
+        render() {
+            const { tab } = this.state;
+            return (
+            <div className="header__wrap">
+                <div className="header__menu">
+                <div onClick={this.tapTab.bind(this, 'all')} className={tab==='all'?'active':''}><Link to="/home/all">首页</Link></div>
+                <div onClick={this.tapTab.bind(this, 'good')} className={tab==='good'?'active':''}><Link to="/home/good">精华</Link></div>
+                <div onClick={this.tapTab.bind(this, 'share')} className={tab==='share'?'active':''}><Link to="/home/share">分享</Link></div>
+                <div onClick={this.tapTab.bind(this, 'ask')} className={tab==='ask'?'active':''}><Link to="/home/ask">问答</Link></div>
+                <div onClick={this.tapTab.bind(this, 'job')} className={tab==='job'?'active':''}><Link to="/home/job">招聘</Link></div>
+                <div onClick={this.tapTab.bind(this, 'dev')} className={tab==='dev'?'active':''}><Link to="/home/dev">测试</Link></div>
+                <div onClick={this.tapTab.bind(this, 'login')} className={tab==='login'?'active':''}><Link to="/login">登录</Link></div>
+                </div>
+            </div>
+            )
+        }
+    }
+
+    export default Header;
+   ```
+   List.js
+   ```javascript
+    import React, { Component } from 'react';
+    import { getTopics } from '../services/apis';
+    import { TAB } from '../config';
+    import { getDateDiff } from '../utils/tool';
+    import { Pagination } from 'antd';
+    import MyItem from './MyItem';
+
+    import TabStore from '../fluxStore/store';
+    import onTabChange from '../fluxStore/actions';
+    class List extends Component {
+        constructor(props) {
+            super(props);
+            this.state = {
+            tab: 'all',
+            page: 1,
+            total: 83,
+            pageSize: 40,
+            list: []
+            }
+        }
+
+        componentDidMount() {
+            const { tab } = this.props.match.params;
+            TabStore.addChangeListener(this._onChange.bind(this));
+            this.tapTab(tab);
+        }
+        componentWillUnmount() {
+            TabStore.removeChangeListener(this._onChange);
+        }
+        tapTab(text) {
+            onTabChange(text);
+            this.setState({
+            tab: TabStore.getTab()
+            }, _ => {
+            this.getTopicList(1);
+            })
+        }
+        _onChange() {
+            this.setState({
+            tab: TabStore.getTab()
+            }, _ => {
+            this.getTopicList(1);
+            })
+        }
+        getTopicList(page) {
+            const { tab, pageSize } = this.state;
+            const params = {
+            page,
+            tab,
+            limit: pageSize,
+            mdrender: true
+            }
+            getTopics(params).then(res => {
+            if (res.status === 200 && res.data.success) {
+                let list = res.data.data;
+                list = list.map(item => {
+                item.tabTxt = '其他';
+                if (item.top) {
+                    item.tabTxt = '置顶';
+                } else if (item.good) {
+                    item.tabTxt = '精华';
+                } else if (item.tab) {
+                    item.tabTxt = TAB[item.tab];
+                }
+                item.replyAtTxt = getDateDiff(item.last_reply_at);
+                return item;
+                })
+                this.setState({ list });
+            }
+            })
+        }
+        onPageChange(page, pageSize) {
+            this.setState({ page });
+            this.getTopicList(page);
+        }
+
+        render() {
+            const { list, page, total, pageSize } = this.state;
+            return (
+            <div className="list__wrap">
+                {
+                list.map(item => <MyItem key={item.id} data={item}></MyItem>)
+                }
+                {
+                list.length ? (
+                    <div className="list__wrap-page">
+                    <Pagination pageSize={pageSize} defaultCurrent={1} current={page} total={total * pageSize} onChange={this.onPageChange.bind(this)} />
+                    </div> 
+                ) : ''
+                }
+            </div>
+            )
+        }
+    }
+
+    export default List;
+    ```
+6. 但是Flux也有问题，一是太复杂了，二是处理异步请求比较麻烦，为了提高开发效率和降低学习成本，可以使用Redux。Redux 由 Flux 演变而来，但受 Elm 的启发，避开了 Flux 的复杂性。 不管你有没有使用过它们，只需几分钟就能上手 Redux。
+   ```shell 
+    npm install --save redux
+    npm install --save react-redux
+    npm install --save-dev redux-devtools # 开发者工具，可以不用安装
+   ```
