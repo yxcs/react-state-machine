@@ -1,6 +1,7 @@
 import React, { Component } from 'react';
 import { Link } from 'react-router-dom';
-
+import { connect } from 'react-redux'
+import { tabChange, getTopicList } from '../reduxSaga/actionCreator';
 class Header extends Component {
   constructor(props) {
     super(props);
@@ -9,16 +10,26 @@ class Header extends Component {
     }
   }
 
-  componentDidMount() {
-  
+  componentWillMount() {
+    this.setState({
+      tab: this.props.tab
+    })
   }
 
-  componentWillUnmount() {
-  
+  componentWillReceiveProps(currProps, nextProps) {
+    this.setState({
+      tab: currProps.tab
+    })
   }
 
   tapTab(txt) {
-    
+    this.props.tabChange(txt);
+    this.props.getTopicList({
+      page: 1,
+      tab: txt,
+      limit: 40,
+      mdrender: false
+    })
   }
 
   render() {
@@ -39,4 +50,19 @@ class Header extends Component {
   }
 }
 
-export default Header;
+const mapStateToProps = (state, ownProps) => {
+  return state
+}
+
+const mapDispatchToProps = (dispatch, ownProps) => {
+  return {
+    tabChange: (params) => {
+      dispatch(tabChange(params))
+    },
+    getTopicList: (params) => {
+      dispatch(getTopicList(params))
+    }
+  }
+}
+
+export default connect(mapStateToProps, mapDispatchToProps)(Header);

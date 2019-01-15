@@ -1,9 +1,11 @@
 import React, { Component } from 'react';
-import { getTopics } from '../services/apis';
 import { TAB } from '../config';
 import { getDateDiff } from '../utils/tool';
-import { Pagination } from 'antd';
+import { Pagination, Spin } from 'antd';
 import MyItem from './MyItem';
+
+import { connect } from 'react-redux'
+import { tabChange, getTopicList } from '../reduxSaga/actionCreator';
 
 class List extends Component {
   constructor(props) {
@@ -17,43 +19,52 @@ class List extends Component {
     }
   }
 
-  componentDidMount() {
-    const { tab } = this.props.match.params;
-    
+  componentWillMount() {
+    const tab = this.props.match.params.tab || 'all';
+    this.setState({ tab });
+    this.props.tabChange(tab);
+    this.getList();
   }
-  componentWillUnmount() {
-    
-  }
-  getTopicList(page) {
-    const { tab, pageSize } = this.state;
-    const params = {
-      page,
-      tab,
-      limit: pageSize,
-      mdrender: true
-    }
-    getTopics(params).then(res => {
-      if (res.status === 200 && res.data.success) {
-        let list = res.data.data;
+  componentWillReceiveProps(currProps, nextProps) {
+    if (currProps.topicList) {
+      let list = currProps.topicList.data;
+      if (!this.state.list.length || list[0].id !== this.state.list[0].id) {
         list = list.map(item => {
-          item.tabTxt = '其他';
           if (item.top) {
             item.tabTxt = '置顶';
           } else if (item.good) {
             item.tabTxt = '精华';
-          } else if (item.tab) {
-            item.tabTxt = TAB[item.tab];
+          } else if(!!item.tab) {
+            item.tabTxt = TAB[item.tab]
+          } else {
+            item.tabTxt = '其他';
           }
-          item.replyAtTxt = getDateDiff(item.last_reply_at);
-          return item;
+          item.reply_at = getDateDiff(item.last_reply_at);
         })
-        this.setState({ list });
+        this.setState({
+          list: currProps.topicList.data,
+          page: currProps.topicList.page
+        })
       }
-    })
+    }
   }
-  onPageChange(page, pageSize) {
-    this.setState({ page });
-    this.getTopicList(page);
+  getList() {
+    const { page, tab } = this.state;
+    const params = {
+      page,
+      tab,
+      limit: 40,
+      mdrender: true
+    }
+    this.setState({ list: [] });
+    this.props.getTopicList(params);
+  }
+  pageChange(page, pageSize) {
+    this.setState({
+      page
+    }, _ => {
+      this.getList();
+    });
   }
 
   render() {
@@ -66,13 +77,28 @@ class List extends Component {
         {
           list.length ? (
             <div className="list__wrap-page">
-              <Pagination pageSize={pageSize} defaultCurrent={1} current={page} total={total * pageSize} onChange={this.onPageChange.bind(this)} />
+              <Pagination pageSize={pageSize} defaultCurrent={1} current={page} total={total * pageSize} onChange={this.pageChange.bind(this)} />
             </div> 
-          ) : ''
+          ) : <div className="list__laoding"><Spin size="large" /></div>
         }
       </div>
     )
   }
 }
 
-export default List;
+const mapStateToProps = (state, ownProps) => {
+  return state
+}
+
+const mapDispatchToProps = (dispatch, ownProps) => {
+  return {
+    tabChange: (params) => {
+      dispatch(tabChange(params))
+    },
+    getTopicList: (params) => {
+      dispatch(getTopicList(params))
+    }
+  }
+}
+
+export default connect(mapStateToProps, mapDispatchToProps)(List);

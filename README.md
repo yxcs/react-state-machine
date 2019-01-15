@@ -3,7 +3,7 @@
 包括: 
 - react-router4.0 的使用 
 - - axios 获取远程api内容
-- 从 flux -> redux -> redux-thunk -> redux-sage -> mobx 迁移转变的过程
+- 从 flux -> redux -> redux-thunk -> redux-sage -> mobx 迁移转变的过程，redux-thunk 和 mobx 本教程并未涉及，有兴趣的自己去了解一下
 - antd UI 组件的添加
 - ...
 ### 项目安装
@@ -584,3 +584,408 @@ npm start
     npm install --save react-redux
     npm install --save-dev redux-devtools # 开发者工具，可以不用安装
    ```
+   在src文件夹下新建reduxStore文件夹，然后新建actions/index.js、reducers/index.js、reducers/tab.js，在index.js中添加全局引入
+   src/index.js
+   ```javascript
+    import React from 'react';
+    import ReactDOM from 'react-dom';
+    import { Provider } from 'react-redux'
+    import { createStore } from 'redux'
+    import reducer from './reduxStore/reducers'
+    import './index.css';
+    import App from './App';
+
+    let store = createStore(reducer)
+
+    ReactDOM.render((
+    <Provider store={store}>
+        <App />
+    </Provider>
+    ), document.getElementById('root'));
+   ```
+   actions/index.js
+   ```javascript
+    export const changeTab = tab => {
+        return {
+            type: 'TAB_CHANGE',
+            payload: tab
+        }
+    }
+   ```
+   reducers/tab.js
+   ```javascript
+    const tab = (state = 'all', action) => {
+    switch (action.type) {
+        case 'TAB_CHANGE':
+        return action.payload;
+        default:
+        return state
+    }
+    }
+
+    export default tab
+   ```
+   reducers/index.js
+   ```javascript
+    import { combineReducers } from 'redux'
+    import tab from './tab'
+
+    const reducer = combineReducers({
+    tab
+    })
+
+    export default reducer
+   ```
+   基础结构搭建完成了，在页面中调用：
+   Header.js
+   ```javascript
+    import React, { Component } from 'react';
+    import { Link } from 'react-router-dom';
+    import { connect } from 'react-redux'
+    import { changeTab } from '../reduxStore/actions';
+    class Header extends Component {
+        constructor(props) {
+            super(props);
+            this.state = {
+            tab: 'all'
+            }
+        }
+
+        componentWillMount() {
+            this.setState({
+            tab: this.props.tab
+            })
+        }
+
+        componentWillReceiveProps(next, old) {
+            this.setState({
+            tab: next.tab
+            })
+        }
+
+        tapTab(txt) {
+            this.props.changeTab(txt);
+        }
+
+        render() {
+            const { tab } = this.state;
+            return (
+            <div className="header__wrap">
+                <div className="header__menu">
+                <div onClick={this.tapTab.bind(this, 'all')} className={tab==='all'?'active':''}><Link to="/home/all">首页</Link></div>
+                <div onClick={this.tapTab.bind(this, 'good')} className={tab==='good'?'active':''}><Link to="/home/good">精华</Link></div>
+                <div onClick={this.tapTab.bind(this, 'share')} className={tab==='share'?'active':''}><Link to="/home/share">分享</Link></div>
+                <div onClick={this.tapTab.bind(this, 'ask')} className={tab==='ask'?'active':''}><Link to="/home/ask">问答</Link></div>
+                <div onClick={this.tapTab.bind(this, 'job')} className={tab==='job'?'active':''}><Link to="/home/job">招聘</Link></div>
+                <div onClick={this.tapTab.bind(this, 'dev')} className={tab==='dev'?'active':''}><Link to="/home/dev">测试</Link></div>
+                <div onClick={this.tapTab.bind(this, 'login')} className={tab==='login'?'active':''}><Link to="/login">登录</Link></div>
+                </div>
+            </div>
+            )
+        }
+    }
+
+    const mapStateToProps = state => {
+        return {
+            tab: state.tab
+        }
+    }
+
+    const mapDispatchToProps = dispatch => {
+        return {
+            changeTab: tab => {
+            dispatch(changeTab(tab))
+            }
+        }
+    }
+
+    export default connect(mapStateToProps, mapDispatchToProps)(Header);
+   ```
+   ```javascript
+    import React, { Component } from 'react';
+    import { getTopics } from '../services/apis';
+    import { TAB } from '../config';
+    import { getDateDiff } from '../utils/tool';
+    import { Pagination, Spin } from 'antd';
+    import MyItem from './MyItem';
+
+    import { connect } from 'react-redux'
+    import { changeTab } from '../reduxStore/actions';
+
+    class List extends Component {
+        constructor(props) {
+            super(props);
+            this.state = {
+            tab: 'all',
+            page: 1,
+            total: 83,
+            pageSize: 40,
+            list: []
+            }
+        }
+
+        componentWillMount() {
+            this.setState({
+            tab: this.props.tab,
+            list: []
+            }, _ => {
+            this.getTopicList(1);
+            })
+        }
+
+        componentWillReceiveProps(next, old) {
+            if (next.tab !== this.state.tab) {
+            this.setState({
+                tab: next.tab,
+                list: []
+            })
+            this.getTopicList(1);
+            }
+        }
+
+        getTopicList(page) {
+            const { tab, pageSize } = this.state;
+            const params = {
+            page,
+            tab,
+            limit: pageSize,
+            mdrender: true
+            }
+            getTopics(params).then(res => {
+            if (res.status === 200 && res.data.success) {
+                let list = res.data.data;
+                list = list.map(item => {
+                item.tabTxt = '其他';
+                if (item.top) {
+                    item.tabTxt = '置顶';
+                } else if (item.good) {
+                    item.tabTxt = '精华';
+                } else if (item.tab) {
+                    item.tabTxt = TAB[item.tab];
+                }
+                item.replyAtTxt = getDateDiff(item.last_reply_at);
+                return item;
+                })
+                this.setState({ list });
+            }
+            })
+        }
+        onPageChange(page, pageSize) {
+            this.setState({ page, list: [] });
+            this.getTopicList(page);
+        }
+
+        render() {
+            const { list, page, total, pageSize } = this.state;
+            return (
+            <div className="list__wrap">
+                {
+                list.map(item => <MyItem key={item.id} data={item}></MyItem>)
+                }
+                {
+                list.length ? (
+                    <div className="list__wrap-page">
+                    <Pagination pageSize={pageSize} defaultCurrent={1} current={page} total={total * pageSize} onChange={this.onPageChange.bind(this)} />
+                    </div> 
+                ) : <div className="list__laoding"><Spin size="large" /></div>
+                }
+            </div>
+            )
+        }
+    }
+
+    const mapStateToProps = state => {
+        return {
+            tab: state.tab
+        }
+    }
+
+    const mapDispatchToProps = dispatch => {
+        return {
+            changeTab: tab => {
+              dispatch(changeTab(tab))
+            }
+        }
+    }
+
+    export default connect(mapStateToProps, mapDispatchToProps)(List);
+   ```
+7. 可以将异步请求加入到redux中，直接使用redux来实现有点复杂，而且不够优雅，这是我们可以将之升级为 redux-sage
+   redux-saga 是一个用于管理应用程序 Side Effect（副作用，例如异步获取数据，访问浏览器缓存等）的 library，它的目标是让副作用管理更容易，执行更高效，测试更简单，在处理故障时更容易。
+   可以想像为，一个 saga 就像是应用程序中一个单独的线程，它独自负责处理副作用。 redux-saga 是一个 redux 中间件，意味着这个线程可以通过正常的 redux action 从主应用程序启动，暂停和取消，它能访问完整的 redux state，也可以 dispatch redux action。
+   ```shell
+    npm install --save redux-saga
+   ```
+   在src文件夹下新建reduxSaga文件夹，在reduxSaga下新建多个文件：actionCreator.js、types.js、sagas.js、reducers.js
+   actionCreator.js
+   ```javascript
+    import * as types from './types.js';
+
+    export const tabChange = (payload) => {
+        return {
+            type: types.TAB_CHANGE,
+            payload
+        }
+    }
+
+    export const getTopicList = (payload) => {
+        return {
+            type: types.GET_TOPIC_LIST,
+            payload
+        }
+    }
+
+    export const getTopicDetail = (payload) => {
+        return {
+            type: types.GET_TOPIC_DETAIL,
+            payload
+        }
+    }
+   ```
+   types.js
+   ```javascript
+    // tab切换
+    export const TAB_CHANGE = 'TAB_CHANGE';
+    export const TAB_CHANGE_SUCCESS = 'TAB_CHANGE_SUCCESS';
+    export const TAB_CHANGE_ERROR = 'TAB_CHANGE_ERROR';
+
+    // 获取主题列表
+    export const GET_TOPIC_LIST = 'GET_TOPIC_LIST';
+    export const GET_TOPIC_LIST_SUCCESS = 'GET_TOPIC_LIST_SUCCESS';
+    export const GET_TOPIC_LIST_ERROR = 'GET_TOPIC_LIST_ERROR';
+
+    // 获取主题详情
+    export const GET_TOPIC_DETAIL = 'GET_TOPIC_DETAIL';
+    export const GET_TOPIC_DETAIL_SUCCESS = 'GET_TOPIC_DETAIL_SUCCESS';
+    export const GET_TOPIC_DETAIL_ERROR = 'GET_TOPIC_DETAIL_ERROR';
+
+    // Flux -> redux -> redux-thunk -> redux-saga -> mobx
+   ```
+   sagas.js
+   ```javascript
+    import { take, fork, put, call, takeLatest } from 'redux-saga/effects'
+    import * as types from './types'
+    import * as api from '../services/apis'
+
+    import { Message } from 'antd'
+
+    function * tabChange () {
+        while(true) {
+            try {
+            let action = yield take(types.TAB_CHANGE)
+            yield put({
+                type: types.TAB_CHANGE_SUCCESS,
+                data: action.payload
+            })
+            } catch (error) {
+            
+            }
+        }
+    }
+
+    function * getTopicList () {
+        while(true) {
+            try {
+            let action = yield take(types.GET_TOPIC_LIST)
+            let params = action.payload
+            let res = yield call(api.getTopics, params)
+            if (res.status === 200 && res.data.data) {
+                yield put({
+                type: types.GET_TOPIC_LIST_SUCCESS,
+                payload: {
+                    data: res.data.data,
+                    page: params.page
+                }
+                })
+            } else {
+                yield put({
+                type: types.GET_TOPIC_LIST_ERROR
+                })
+            }
+            } catch (error) {
+            Message.error('服务器异常，请稍后重试！')
+            console.log(error)
+            yield put({
+                type: types.GET_TOPIC_LIST_ERROR
+            })
+            }
+        }
+    }
+
+    function * getTopicDetail () {
+        while(true) {
+            try {
+            let action = yield take(types.GET_TOPIC_DETAIL)
+            let params = action.payload
+            let res = yield call(api.getTopicsDetail, params)
+            if (res.status === 200 && res.data.data) {
+                yield put({
+                type: types.GET_TOPIC_DETAIL_SUCCESS,
+                payload: res.data.data
+                })
+            } else {
+                yield put({
+                type: types.GET_TOPIC_DETAIL_ERROR
+                })
+            }
+            } catch (error) {
+            Message.error('服务器异常，请稍后重试！')
+            console.log(error)
+            yield put({
+                type: types.GET_TOPIC_DETAIL_ERROR
+            })
+            }
+        }
+    }
+
+    export default function * () {
+        yield fork(tabChange);
+        yield fork(getTopicList);
+        yield fork(getTopicDetail);
+    }
+   ```
+   reducers.js
+   ```javascript
+    import * as types from './types'
+    import { combineReducers } from 'redux'
+    // import { List } from 'immutable';
+
+    const tab = (state = 'all', action) => {
+        switch (action.type) {
+            case types.TAB_CHANGE_SUCCESS:
+            return action.data
+            default:
+            return state
+        }
+    }
+
+    const topicList = (state = {data: [], page: 1}, action) => {
+        switch (action.type) {
+            case types.GET_TOPIC_LIST_SUCCESS:
+            let lists = [];
+            lists.push(...action.payload.data)
+            return {data: lists, page: action.payload.page};
+            default:
+            return state
+        }
+    }
+
+    const topicDetail = (state = {}, action) => {
+        switch (action.type) {
+            case types.GET_TOPIC_DETAIL_SUCCESS:
+            const detail = {...action.payload};
+            return detail;
+            default:
+            return state
+        }
+    }
+
+    const app = combineReducers({
+        tab,
+        topicList,
+        topicDetail
+    })
+
+    export default app
+   ```
+   现在我们结合了axios、antd、react-router、redux、redux-saga等内容搭建的一个简单的小系统就此完成。
