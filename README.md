@@ -3,7 +3,7 @@
 包括: 
 - react-router4.0 的使用 
 - - axios 获取远程api内容
-- 从 flux -> redux -> redux-thunk -> redux-sage -> mobx 迁移转变的过程，redux-thunk 和 mobx 本教程并未涉及，有兴趣的自己去了解一下
+- 从 flux -> redux -> redux-sage 迁移转变的过程，mobx 本教程并未涉及，有兴趣的自己去了解一下
 - antd UI 组件的添加
 - ...
 ### 项目安装
@@ -989,3 +989,6 @@ npm start
     export default app
    ```
    现在我们结合了axios、antd、react-router、redux、redux-saga等内容搭建的一个简单的小系统就此完成。
+
+### 最后
+将其他内容完善之后的代码放到了github上：[react-state-machine]()

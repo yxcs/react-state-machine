@@ -73,8 +73,140 @@ function * getTopicDetail () {
   }
 }
 
+function * checkToken () {
+  while(true) {
+    try {
+      let action = yield take(types.CHECK_ACCESS_TOKEN)
+      let params = action.payload
+      let res = yield call(api.checkAccessToken, params)
+      if (res.status === 200 && res.data.success) {
+        yield put({
+          type: types.CHECK_ACCESS_TOKEN_SUCCESS,
+          payload: {
+            ...res.data,
+            accesstoken: params
+          }
+        })
+      } else {
+        yield put({
+          type: types.CHECK_ACCESS_TOKEN_ERROR
+        })
+      }
+    } catch (error) {
+      Message.error('登录失败，请验证token')
+      yield put({
+        type: types.CHECK_ACCESS_TOKEN_ERROR
+      })
+    }
+  }
+}
+
+function * setToken () {
+  while(true) {
+    try {
+      let action = yield take(types.SET_ACCESS_TOKEN)
+      let params = action.payload
+      yield put({
+        type: types.CHECK_ACCESS_TOKEN_SUCCESS,
+        payload: {
+          ...params
+        }
+      })
+       
+    } catch (error) {
+      yield put({
+        type: types.CHECK_ACCESS_TOKEN_ERROR
+      })
+    }
+  }
+}
+
+function * addCollection () {
+  while(true) {
+    try {
+      let action = yield take(types.ADD_COLLECTION)
+      let params = action.payload
+      let res = yield call(api.sendCollectArticle, params)
+      if (res.status === 200 && res.data.success) {
+        yield put({
+          type: types.ADD_COLLECTION_SUCCESS,
+          payload: {
+            ...res.data,
+            accesstoken: params
+          }
+        })
+      } else {
+        yield put({
+          type: types.ADD_COLLECTION_ERROR
+        })
+      }
+    } catch (error) {
+      yield put({
+        type: types.ADD_COLLECTION_ERROR
+      })
+    }
+  }
+}
+
+function * delCollection () {
+  while(true) {
+    try {
+      let action = yield take(types.DEL_COLLECTION)
+      let params = action.payload
+      let res = yield call(api.cancelCollectArticle, params)
+      if (res.status === 200 && res.data.success) {
+        yield put({
+          type: types.DEL_COLLECTION_SUCCESS,
+          payload: {
+            ...res.data
+          }
+        })
+      } else {
+        yield put({
+          type: types.DEL_COLLECTION_ERROR
+        })
+      }
+    } catch (error) {
+      yield put({
+        type: types.DEL_COLLECTION_ERROR
+      })
+    }
+  }
+}
+
+function * getAuthor () {
+  while(true) {
+    try {
+      let action = yield take(types.GET_AUTHOR)
+      let params = action.payload
+      let res = yield call(api.getUserDetail, params)
+      if (res.status === 200 && res.data.success) {
+        yield put({
+          type: types.GET_AUTHOR_SUCCESS,
+          payload: {
+            ...res.data.data
+          }
+        })
+      } else {
+        yield put({
+          type: types.GET_AUTHOR_ERROR
+        })
+      }
+    } catch (error) {
+      yield put({
+        type: types.GET_AUTHOR_ERROR
+      })
+    }
+  }
+}
+
 export default function * () {
   yield fork(tabChange);
   yield fork(getTopicList);
   yield fork(getTopicDetail);
+  yield fork(checkToken);
+  yield fork(setToken);
+  yield fork(addCollection);
+  yield fork(delCollection);
+  yield fork(getAuthor);
 }

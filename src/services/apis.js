@@ -34,10 +34,9 @@ export const getTopics = (params) => {
 }
 
 // get /topic/:id 主题详情
-export const getTopicsDetail = (id, params) => {
-  return axios.get(`${BASE_URL}/topic/${id}`, {
-    ...params
-  })
+export const getTopicsDetail = (params) => {
+  const str = params2String(params.params);
+  return axios.get(`${BASE_URL}/topic/${params.id}?${str}`)
 }
 
 // post /topics 新建主题
@@ -116,6 +115,13 @@ export const sendMessageMarkAll = (accesstoken) => {
 // post /message/mark_one/:msg_id 标记单个消息为已读
 export const sendMessageMarkOne = (msg_id, accesstoken) => {
   return axios.post(`${BASE_URL}/message/mark_one/${msg_id}`, {
+    accesstoken
+  })
+}
+
+// 登录验证
+export const checkAccessToken = (accesstoken) => {
+  return axios.post(`${BASE_URL}/accesstoken`, {
     accesstoken
   })
 }

@@ -32,10 +32,45 @@ const topicDetail = (state = {}, action) => {
   }
 }
 
+const token = (state = {
+    avatar_url: '',
+    id: '',
+    loginname: '',
+    success: false
+  }, action) => {
+    switch (action.type) {
+      case types.CHECK_ACCESS_TOKEN_SUCCESS:
+        const token = {...action.payload};
+        return token;
+      default:
+        return state
+    }
+}
+
+const author = (state = {
+  avatar_url: '',
+  create_at: '',
+  githubUsername: '',
+  loginname: '',
+  recent_replies: [],
+  recent_topics: [],
+  score: 0
+}, action) => {
+  switch (action.type) {
+    case types.GET_AUTHOR_SUCCESS:
+      const author = {...action.payload};
+      return author;
+    default:
+      return state
+  }
+}
+
 const app = combineReducers({
   tab,
   topicList,
-  topicDetail
+  topicDetail,
+  token,
+  author
 })
 
 export default app

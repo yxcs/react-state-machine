@@ -8,6 +8,7 @@ import Footer from './components/Footer';
 import Header from './components/Header';
 import List from './components/List';
 import Login from './components/Login';
+import User from './components/User';
 
 import './App.css';
 import './components/main.less';
@@ -30,6 +31,7 @@ class App extends Component {
               <Route path='/article/:id' component={Article}></Route>
               <Route path='/author/:id' component={Author}></Route>
               <Route path='/login' component={Login}></Route>
+              <Route path='/user' component={User}></Route>
             </Switch>
           </Content>
           <Footer></Footer> {/* 页脚 © copyright等信息 */}
