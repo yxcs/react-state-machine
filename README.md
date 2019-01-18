@@ -991,4 +991,4 @@ npm start
    现在我们结合了axios、antd、react-router、redux、redux-saga等内容搭建的一个简单的小系统就此完成。
 
 ### 最后
-将其他内容完善之后的代码放到了github上：[react-state-machine]()
+将其他内容完善之后的代码放到了github上：[react-state-machine](https://github.com/yxcs/react-state-machine.git)
